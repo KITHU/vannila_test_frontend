@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item Manager</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        .form-section, .list-section {
+            flex: 1;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input, textarea, button {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .item-list {
+            list-style: none;
+            padding: 0;
+        }
+        .item {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        .error {
+            color: red;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Item Manager</h1>
+    
+    <div class="container">
+        <div class="form-section">
+            <h2>Create New Item</h2>
+            <form id="createForm">
+                <input type="text" id="name" placeholder="Item name" required>
+                <textarea id="description" placeholder="Item description"></textarea>
+                <button type="submit">Create Item</button>
+            </form>
+            <div id="createMessage" class="message"></div>
+        </div>
+        
+        <div class="list-section">
+            <h2>Items List</h2>
+            <button id="refreshBtn">Refresh List</button>
+            <div id="error" class="error"></div>
+            <ul id="itemList" class="item-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3000/api';
+        
+        // DOM elements
+        const createForm = document.getElementById('createForm');
+        const itemList = document.getElementById('itemList');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const errorDiv = document.getElementById('error');
+        const createMessage = document.getElementById('createMessage');
+        
+        // Fetch all items
+        async function fetchItems() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/items`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch items');
+                }
+                const items = await response.json();
+                renderItems(items);
+                errorDiv.textContent = '';
+            } catch (error) {
+                errorDiv.textContent = error.message;
+                console.error('Error fetching items:', error);
+            }
+        }
+        
+        // Render items to the list
+        function renderItems(items) {
+            itemList.innerHTML = '';
+            if (items.length === 0) {
+                itemList.innerHTML = '<li>No items found</li>';
+                return;
+            }
+            
+            items.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'item';
+                li.innerHTML = `
+                    <h3>${item.name}</h3>
+                    <p>${item.description || 'No description'}</p>
+                    <small>ID: ${item.id} | Created: ${new Date(item.created_at).toLocaleString()}</small>
+                `;
+                itemList.appendChild(li);
+            });
+        }
+        
+        // Create new item
+        async function createItem(itemData) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/items`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(itemData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to create item');
+                }
+                
+                const result = await response.json();
+                createMessage.textContent = `Item created successfully with ID: ${result.id}`;
+                createMessage.style.color = 'green';
+                fetchItems(); // Refresh the list
+            } catch (error) {
+                createMessage.textContent = error.message;
+                createMessage.style.color = 'red';
+                console.error('Error creating item:', error);
+            }
+        }
+        
+        // Event listeners
+        createForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const description = document.getElementById('description').value;
+            
+            if (!name) {
+                createMessage.textContent = 'Name is required';
+                createMessage.style.color = 'red';
+                return;
+            }
+            
+            await createItem({ name, description });
+            createForm.reset();
+        });
+        
+        refreshBtn.addEventListener('click', fetchItems);
+        
+        // Initial load
+        fetchItems();
+    </script>
+</body>
+</html>
