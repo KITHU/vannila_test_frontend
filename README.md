@@ -1,6 +1,8 @@
 # Vanilla Frontend
 
-A simple vanilla frontend application.
+A simple vanilla front-end application.
+![test frontend](https://github.com/user-attachments/assets/69dac617-e927-4498-a20d-c737b779d2e6)
+
 
 ## Overview
 
